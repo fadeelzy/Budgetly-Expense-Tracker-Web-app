@@ -18,10 +18,15 @@ Built with:
 🚀 Key Features
 
 ✅ Add & Split Expenses – Seamlessly add shared expenses and assign participants
+
 ✅ Smart Summary View – Instantly see who owes and who’s owed
+
 ✅ Balance Settlement – Auto-generate clear settlement breakdowns
+
 ✅ Modern, Minimal UI – Warm, professional palette built with CSS variables
+
 ✅ Persistent Storage with MongoDB – Cloud-hosted, scalable data backend
+
 ✅ Environment-safe Configuration – Secure .env file integration
 
 🧠 Tech Stack
