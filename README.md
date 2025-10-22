@@ -110,7 +110,9 @@ Push to the branch (git push origin feature/new-feature)
 Open a Pull Request 🚀
 
 🧑‍💻 Author
+
 Fadilah Abdulkadir
+
 💼 Site Reliability Engineer | AWS Cloud Solutions Architect | Backend Developer | Python and Django
 
 
