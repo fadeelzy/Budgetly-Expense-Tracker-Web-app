@@ -30,15 +30,24 @@ Built with:
 ✅ Environment-safe Configuration – Secure .env file integration
 
 🧠 Tech Stack
+
 Layer	Technology
+
 Backend	Django 5
+
 Database	MongoDB Atlas
+
 Frontend	HTML5, CSS3 (custom Tailwind-like utility classes)
+
 Environment	Pipenv
+
 Server	Django’s built-in dev server
+
 Version Control	Git & GitHub
 
+
 ⚙️ Setup Instructions
+
 1️⃣ Clone the Repository
 git clone https://github.com/yourusername/budgetly.git
 cd budgetly
