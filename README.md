@@ -63,9 +63,13 @@ Then visit:
 👉 http://127.0.0.1:8000/
 
 📁 Project Structure
+
 budgetly/
+
 ├── myapp/
+
 │   ├── models.py
+
 │   ├── views.py
 │   ├── urls.py
 │   ├── templates/
