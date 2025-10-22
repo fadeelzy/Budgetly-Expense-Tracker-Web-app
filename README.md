@@ -71,22 +71,39 @@ budgetly/
 │   ├── models.py
 
 │   ├── views.py
+
 │   ├── urls.py
+
 │   ├── templates/
+
 │   │   ├── dashboard.html
+
 │   │   ├── add_expense.html
+
 │   │   └── summary.html
+
 │   └── static/
+
 │       └── css/
+
 │           └── style.css
+
 ├── expenseproject/
+
 │   ├── settings.py
+
 │   ├── urls.py
+
 │   └── wsgi.py
+
 ├── .env
+
 ├── Pipfile
+
 ├── Pipfile.lock
+
 └── README.md
+
 
 💡 Core Logic Overview
 
