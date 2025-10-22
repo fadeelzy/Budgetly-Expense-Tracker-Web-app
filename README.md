@@ -150,6 +150,8 @@ Fadilah Abdulkadir
 
 💼 Site Reliability Engineer | AWS Cloud Solutions Architect | Backend Developer | Python and Django
 
+📧 [fadeelzy@gmail.com] 🌐 [https://www.linkedin.com/in/fadilah-abdulkadir/]
+
 
 🪶 License
 
