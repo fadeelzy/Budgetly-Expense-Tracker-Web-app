@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Expense - Budgetly</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body class="min-h-screen bg-background">
+    <!-- Navigation -->
+    <nav class="bg-card shadow-sm border-b border-border">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <img src="{% static 'budgetly.image.png'%}" alt="Budgetly" class="w-8 h-8">
+                    <h1 class="text-xl font-bold text-foreground">Budgetly</h1>
+                </div>
+                <nav class="navbar">
+                     <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
+                     <a href="{% url 'add-expense' %}" class="{% if request.resolver_match.url_name == 'add-expense' %}active{% endif %}">Add Expense</a>
+                     <a href="{% url 'summary' %}" class="{% if request.resolver_match.url_name == 'summary' %}active{% endif %}">Summary</a>
+                </nav>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto py-8 px-6">
+        <div class="max-w-2xl mx-auto">
+            <div class="bg-card rounded-lg border border-border">
+                <div class="p-6 border-b border-border">
+                    <h2 class="text-2xl font-semibold text-card-foreground">Add New Expense</h2>
+                </div>
+                <div class="p-6">
+                    <form id="expense-form" class="space-y-6" method="POST">
+                         {% csrf_token %}
+                        <div>
+                            <label for="description" class="block text-sm font-medium text-foreground mb-2">Description</label>
+                            <input
+                                type="text"
+                                id="description"
+                                name="description"
+                                placeholder="e.g., Dinner at restaurant"
+                                class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                required
+                            >
+                        </div>
+
+                        <div>
+                            <label for="amount" class="block text-sm font-medium text-foreground mb-2">Amount ($)</label>
+                            <input
+                                type="number"
+                                id="amount"
+                                name="amount"
+                                step="0.01"
+                                min="0"
+                                placeholder="0.00"
+                                class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                required
+                            >
+                        </div>
+
+                        <div>
+                            <label for="paidBy" class="block text-sm font-medium text-foreground mb-2">Paid By</label>
+                            <input
+                                type="text"
+                                id="paidBy"
+                                name="paidBy"
+                                placeholder="Who paid for this expense?"
+                                class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                required
+                            >
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">Add New Person</label>
+                            <div class="flex gap-2">
+                                <input
+                                    type="text"
+                                    id="newParticipant"
+                                    placeholder="Enter person's name"
+                                    class="flex-1 px-3 py-2 bg-input border border-border rounded-md text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                >
+                                <button type="button" id="addParticipantBtn" class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+                                    Add
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">Select Participants</label>
+                            <div id="participants-list" class="grid grid-cols-2 gap-2 mt-2">
+                                <p class="text-muted-foreground text-sm col-span-2">
+                                    Add people above to select participants
+                                </p>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+                            Add Expense
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="fixed top-4 right-4 bg-card border border-border rounded-md shadow-lg p-4 transform translate-x-full transition-transform duration-300 z-50">
+        <div class="flex items-center">
+            <div class="flex-1">
+                <h4 id="toast-title" class="text-sm font-medium text-card-foreground"></h4>
+                <p id="toast-description" class="text-sm text-muted-foreground"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'add-expense.js' %}"></script>
+</body>
+</html>

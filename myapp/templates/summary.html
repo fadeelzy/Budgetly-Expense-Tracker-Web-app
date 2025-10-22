@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Summary - Budgetly</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}" >
+</head>
+<body class="min-h-screen bg-background">
+    <!-- Navigation -->
+    <nav class="bg-card shadow-sm border-b border-border">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <img src="{% static 'budgetly.image.png'%}" alt="Budgetly" class="w-8 h-8">
+                    <h1 class="text-xl font-bold text-foreground">Budgetly</h1>
+                </div>
+                <nav class="navbar">
+                     <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
+                     <a href="{% url 'add-expense' %}" class="{% if request.resolver_match.url_name == 'add-expense' %}active{% endif %}">Add Expense</a>
+                     <a href="{% url 'summary' %}" class="{% if request.resolver_match.url_name == 'summary' %}active{% endif %}">Summary</a>
+                </nav>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto py-8 px-6">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold mb-4 text-foreground">Balance Summary</h1>
+                <p class="text-muted-foreground">
+                    See who owes what and settle up with your friends
+                </p>
+            </div>
+
+            <!-- Overview Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-card rounded-lg border border-border p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-medium text-card-foreground">Total Owed</h3>
+                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                    </div>
+                    <div class="text-2xl font-bold text-green-600" id="total-owed">${{ total_owed }}</div>
+                </div>
+                <div class="bg-card rounded-lg border border-border p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-medium text-card-foreground">Total Owing</h3>
+                        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
+                    </div>
+                    <div class="text-2xl font-bold text-red-600" id="total-owing">${{ total_owing }}</div>
+                </div>
+                <div class="bg-card rounded-lg border border-border p-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-medium text-card-foreground">Active People</h3>
+                        <svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="text-2xl font-bold text-card-foreground" id="active-people">{{ active_people }}</div>
+                </div>
+            </div>
+
+            <div id="summary-content">
+                <div class="bg-card rounded-lg border border-border">
+                    <div class="p-12 text-center">
+                        <p class="text-muted-foreground mb-4">No expenses to summarize yet</p>
+                        <a href="{% url 'add-expense' %}" class="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+                            Add Your First Expense
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Individual Balances -->
+            <div id="individual-balances" class="space-y-6 hidden">
+                <div class="bg-card rounded-lg border border-border">
+                    <div class="p-6 border-b border-border">
+                        <h2 class="text-xl font-semibold text-card-foreground">Individual Balances</h2>
+                    </div>
+                    <div class="p-6">
+                        <div id="balances-list" class="space-y-4">
+                            {% for user, balance in balances %}
+                                <div class="flex justify-between p-2 border-b border-border">
+                                     <span>{{ user }}</span>
+                                     <span>${{ balance|floatformat:2 }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settlement Suggestions -->
+                <div class="bg-card rounded-lg border border-border">
+                    <div class="p-6 border-b border-border">
+                        <h2 class="text-xl font-semibold text-card-foreground">Suggested Settlements</h2>
+                    </div>
+                    <div class="p-6">
+                        <div id="settlements-list" class="space-y-4">
+                               {% for s in settlements %}
+                                    <div class="flex justify-between p-2 border-b border-border">
+                                        <span>{{ s.from }} pays {{ s.to }}</span>
+                                        <span>${{ s.amount }}</span>
+                                    </div>
+                                {% empty %}
+                                    <p class="text-muted-foreground">No settlements needed 🎉</p>
+                                {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'summary.js' %}"></script>
+</body>
+</html>

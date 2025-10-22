@@ -1,0 +1,65 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ---- Django ----
+*.log
+*.pot
+*.pyc
+*.pyo
+*.mo
+*.db
+db.sqlite3
+media/
+staticfiles/
+static/
+local_settings.py
+
+# ---- Environment Variables ----
+.env
+.env.local
+.env.*.local
+
+# ---- Pipenv ----
+Pipfile.lock
+.venv/
+venv/
+env/
+ENV/
+
+# ---- IDE & Editor Config ----
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ---- OS Generated ----
+.DS_Store
+Thumbs.db
+
+# ---- Test & Coverage ----
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+junit.xml
+
+# ---- MongoDB dumps ----
+dump/
+*.bson
+*.json
+
+# ---- Deployment ----
+*.tar.gz
+*.zip
+*.bak
+*.swp

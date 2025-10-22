@@ -1,0 +1,131 @@
+<!DOCTYPE html> 
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budgetly - Split Expenses, Stay Friends</title>
+    <link rel="stylesheet" href="{% static 'style.css' %}" >
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.462.0/lucide.min.css" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-background">
+    <!-- Navigation -->
+    <nav class="bg-card shadow-sm border-b border-border">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <img src="{% static 'budgetly.image.png'%}" alt="Budgetly" class="w-8 h-8">
+                    <h1 class="text-xl font-bold text-foreground">Budgetly</h1>
+                </div>
+                <nav class="navbar">
+                     <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
+                     <a href="{% url 'add-expense' %}" class="{% if request.resolver_match.url_name == 'add-expense' %}active{% endif %}">Add Expense</a>
+                     <a href="{% url 'summary' %}" class="{% if request.resolver_match.url_name == 'summary' %}active{% endif %}">Summary</a>
+                </nav>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-r from-accent to-secondary text-accent-foreground py-16 px-6">
+        <div class="container mx-auto text-center">
+            <h1 class="text-4xl md:text-6xl font-bold mb-6">
+                Split Expenses, Stay Friends
+            </h1>
+            <p class="text-xl md:text-2xl mb-8 opacity-90 max-w-2xl mx-auto">
+                Budgetly makes it easy to track shared expenses and settle up with friends. 
+                No more awkward money conversations!
+            </p>
+            <a href="{% url 'add-expense' %}" class="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Add Your First Expense
+            </a>
+        </div>
+    </section>
+
+    <div class="container mx-auto py-8 px-6">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-card rounded-lg border border-border p-6">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-medium text-card-foreground">Total Expenses</h3>
+                    <svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                    </svg>
+                </div>
+                <div class="text-2xl font-bold text-card-foreground" id="total-amount">
+                    ${{ total_amount|default:"0.00" }}
+                </div>
+            </div>
+            <div class="bg-card rounded-lg border border-border p-6">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-medium text-card-foreground">Active People</h3>
+                    <svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                    </svg>
+                </div>
+                <div class="text-2xl font-bold text-card-foreground" id="total-people">{{ total_people|default:"0" }}</div>
+            </div>
+            <div class="bg-card rounded-lg border border-border p-6">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-sm font-medium text-card-foreground">Total Transactions</h3>
+                    <svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                </div>
+                <div class="text-2xl font-bold text-card-foreground" id="total-transactions">{{ total_transactions|default:"0" }}</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Recent Expenses -->
+            <div class="bg-card rounded-lg border border-border">
+                <div class="p-6 border-b border-border">
+                    <h2 class="text-xl font-semibold text-card-foreground">Recent Expenses</h2>
+                </div>
+                <div class="p-6">
+                    <div id="expenses-list">
+                        {% if expenses %}
+                            <ul class="divide-y divide-border">
+                                {% for expense in expenses %}
+                                    <li class="py-3 flex justify-between">
+                                       <span>{{ expense.description }}</span>
+                                       <span class="font-semibold">${{ expense.amount }}</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+
+                            <div class="text-center py-8">
+                               <p class="text-muted-foreground mb-4">No expenses yet</p>
+                               <a href="{% url 'add-expense' %}" class="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+                                 Add First Expense
+                               </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spending Chart -->
+            <div class="bg-card rounded-lg border border-border">
+                <div class="p-6 border-b border-border">
+                    <h2 class="text-xl font-semibold text-card-foreground">Spending Distribution</h2>
+                </div>
+                <div class="p-6">
+                    <canvas id="spending-chart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'dashboard.js' %}"></script>
+    <script id="expenses-data" type="application/json">
+       {{ expenses_json|safe }}
+    </script>
+
+</body>
+</html>
