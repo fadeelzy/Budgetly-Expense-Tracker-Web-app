@@ -9,23 +9,28 @@ from dotenv import load_dotenv
 
 # Create your views here.
 load_dotenv()
-
 MONGO_URI = os.getenv("MONGODB_URI")
 DB_NAME = os.getenv("MONGODB_DB")
 
+client = MongoClient(MONGO_URI)
+db = client[DB_NAME]
+
 def dashboard(request):
-    # -----------------------
-    # RESET DATABASE
-    # -----------------------
-    client = MongoClient(MONGO_URI)
-    db = client[DB_NAME]
+    # Get a unique session ID for the user
+    session_id = request.session.session_key
+    if not session_id:
+        request.session.create()
+        session_id = request.session.session_key
 
-    # Drop the 'expense' collection to reset
-    if "expense" in db.list_collection_names():
-        db.expense.drop()
+    # Use a temporary collection name per session
+    collection_name = f"expenses_{session_id}"
 
-    # Optionally, add default/demo expense
-    db.expense.insert_one({
+    # Drop the collection if it exists to start fresh
+    if collection_name in db.list_collection_names():
+        db[collection_name].drop()
+
+    # Optionally, add default/demo data
+    db[collection_name].insert_one({
         "description": "Sample Expense",
         "amount": 100,
         "paid_by": {"username": "Admin"},
@@ -33,50 +38,44 @@ def dashboard(request):
         "date": "2025-11-08T00:00:00"
     })
 
-    # -----------------------
-    # FETCH EXPENSES
-    # -----------------------
-    expenses = Expense.objects().order_by("-date")
+    # Fetch expenses for this session
+    expenses_data = list(db[collection_name].find())
 
-    # Total amount
-    total_amount = sum(exp.amount for exp in expenses)
-
-    # Collect unique people (both payers and participants)
+    # Calculate totals
+    total_amount = sum(exp["amount"] for exp in expenses_data)
     people = set()
-    for exp in expenses:
-        if exp.paid_by:
-            people.add(exp.paid_by.username)
-        for p in exp.participants:
-            people.add(p.username)
+    user_totals = {}
+    for exp in expenses_data:
+        payer = exp.get("paid_by", {}).get("username", "Unknown")
+        people.add(payer)
+        for p in exp.get("participants", []):
+            people.add(p.get("username", "Unknown"))
+        user_totals[payer] = user_totals.get(payer, 0) + exp["amount"]
 
     total_people = len(people)
-    total_transactions = expenses.count()
+    total_transactions = len(expenses_data)
 
-    # Spending totals (for chart)
-    user_totals = {}
-    for exp in expenses:
-        user_totals[exp.paid_by.username] = user_totals.get(exp.paid_by.username, 0) + exp.amount
-
-    # Format JSON for dashboard.js
-    expenses_data = [
+    # Format JSON for frontend
+    expenses_json = json.dumps([
         {
-            "description": e.description,
-            "amount": float(e.amount),
-            "paidBy": e.paid_by.username if e.paid_by else "Unknown",
-            "participants": [p.username for p in e.participants],
-            "date": e.date.isoformat() if e.date else "",
+            "description": e["description"],
+            "amount": float(e["amount"]),
+            "paidBy": e.get("paid_by", {}).get("username", "Unknown"),
+            "participants": [p.get("username", "Unknown") for p in e.get("participants", [])],
+            "date": e.get("date", ""),
         }
-        for e in expenses
-    ]
+        for e in expenses_data
+    ])
 
     context = {
-        "expenses": expenses,
+        "expenses": expenses_data,
         "user_totals": user_totals,
-        "expenses_json": json.dumps(expenses_data),
+        "expenses_json": expenses_json,
         "total_amount": total_amount,
         "total_people": total_people,
         "total_transactions": total_transactions,
     }
+
     return render(request, "dashboard.html", context)
 
 
