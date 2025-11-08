@@ -3,10 +3,39 @@ from .models import Expense, User
 import json
 from datetime import datetime
 from collections import defaultdict
+import os
+from pymongo import MongoClient
+from dotenv import load_dotenv
 
 # Create your views here.
+load_dotenv()
+
+MONGO_URI = os.getenv("MONGODB_URI")
+DB_NAME = os.getenv("MONGODB_DB")
 
 def dashboard(request):
+    # -----------------------
+    # RESET DATABASE
+    # -----------------------
+    client = MongoClient(MONGO_URI)
+    db = client[DB_NAME]
+
+    # Drop the 'expense' collection to reset
+    if "expense" in db.list_collection_names():
+        db.expense.drop()
+
+    # Optionally, add default/demo expense
+    db.expense.insert_one({
+        "description": "Sample Expense",
+        "amount": 100,
+        "paid_by": {"username": "Admin"},
+        "participants": [{"username": "User1"}, {"username": "User2"}],
+        "date": "2025-11-08T00:00:00"
+    })
+
+    # -----------------------
+    # FETCH EXPENSES
+    # -----------------------
     expenses = Expense.objects().order_by("-date")
 
     # Total amount
