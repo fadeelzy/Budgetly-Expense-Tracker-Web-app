@@ -15,9 +15,8 @@ DB_NAME = os.getenv("MONGODB_DB")
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 
-
 def get_session_collection(request):
-    """Get the session-specific collection. Initialize demo data if first visit."""
+    """Get the session-specific collection for the user (empty for new sessions)."""
     session_id = request.session.session_key
     if not session_id:
         request.session.save()  # generates session_key
@@ -25,15 +24,9 @@ def get_session_collection(request):
 
     collection_name = f"expenses_{session_id}"
 
-    # Initialize collection only once per session
+    # Create empty collection if it doesn't exist
     if collection_name not in db.list_collection_names():
-        db[collection_name].insert_one({
-            "description": "Sample Expense",
-            "amount": 100,
-            "paid_by": {"username": "Admin"},
-            "participants": [{"username": "User1"}, {"username": "User2"}],
-            "date": datetime.now().isoformat()
-        })
+        db.create_collection(collection_name)
 
     return db[collection_name]
 
@@ -42,24 +35,28 @@ def dashboard(request):
     collection = get_session_collection(request)
     expenses_data = list(collection.find())
 
-    # Calculate totals
-    total_amount = sum(exp["amount"] for exp in expenses_data)
+    # Calculate totals safely
+    total_amount = sum(exp.get("amount", 0) for exp in expenses_data)
     people = set()
     user_totals = {}
+
     for exp in expenses_data:
         payer = exp.get("paid_by", {}).get("username", "Unknown")
-        people.add(payer)
+        if payer != "Unknown":
+            people.add(payer)
         for p in exp.get("participants", []):
-            people.add(p.get("username", "Unknown"))
-        user_totals[payer] = user_totals.get(payer, 0) + exp["amount"]
+            username = p.get("username", "Unknown")
+            if username != "Unknown":
+                people.add(username)
+        user_totals[payer] = user_totals.get(payer, 0) + exp.get("amount", 0)
 
     total_people = len(people)
     total_transactions = len(expenses_data)
 
     expenses_json = json.dumps([
         {
-            "description": e["description"],
-            "amount": float(e["amount"]),
+            "description": e.get("description", ""),
+            "amount": float(e.get("amount", 0)),
             "paidBy": e.get("paid_by", {}).get("username", "Unknown"),
             "participants": [p.get("username", "Unknown") for p in e.get("participants", [])],
             "date": e.get("date", ""),
