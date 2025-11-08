@@ -15,35 +15,32 @@ DB_NAME = os.getenv("MONGODB_DB")
 client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 
-def dashboard(request):
-    # -----------------------
-    # Get or create a unique session ID
-    # -----------------------
+
+def get_session_collection(request):
+    """Get the session-specific collection. Initialize demo data if first visit."""
     session_id = request.session.session_key
     if not session_id:
         request.session.save()  # generates session_key
         session_id = request.session.session_key
 
-    # -----------------------
-    # Use a temporary collection per session
-    # -----------------------
     collection_name = f"expenses_{session_id}"
 
-    # Only initialize the collection once per session
+    # Initialize collection only once per session
     if collection_name not in db.list_collection_names():
-        # Insert default/demo data
         db[collection_name].insert_one({
             "description": "Sample Expense",
             "amount": 100,
             "paid_by": {"username": "Admin"},
             "participants": [{"username": "User1"}, {"username": "User2"}],
-            "date": "2025-11-08T00:00:00"
+            "date": datetime.now().isoformat()
         })
 
-    # -----------------------
-    # Fetch expenses for this session
-    # -----------------------
-    expenses_data = list(db[collection_name].find())
+    return db[collection_name]
+
+
+def dashboard(request):
+    collection = get_session_collection(request)
+    expenses_data = list(collection.find())
 
     # Calculate totals
     total_amount = sum(exp["amount"] for exp in expenses_data)
@@ -59,7 +56,6 @@ def dashboard(request):
     total_people = len(people)
     total_transactions = len(expenses_data)
 
-    # Format JSON for frontend
     expenses_json = json.dumps([
         {
             "description": e["description"],
@@ -82,6 +78,7 @@ def dashboard(request):
 
     return render(request, "dashboard.html", context)
 
+
 def add_expense(request):
     if request.method == "POST":
         description = request.POST.get("description")
@@ -89,70 +86,57 @@ def add_expense(request):
         paid_by_username = request.POST.get("paidBy")
         participants_usernames = request.POST.getlist("participants")
 
-        # Get or create "paid by" user
-        paid_by_user = User.objects(username=paid_by_username).first()
-        if not paid_by_user:
-            paid_by_user = User(username=paid_by_username)
-            paid_by_user.save()
+        collection = get_session_collection(request)
 
-        # Get or create participants
-        participants_users = []
-        for username in participants_usernames:
-            user = User.objects(username=username).first()
-            if not user:
-                user = User(username=username)
-                user.save()
-            participants_users.append(user)
-
-        # Create expense
-        expense = Expense(
-            description=description,
-            amount=amount,
-            paid_by=paid_by_user,
-            participants=participants_users,
-            date=datetime.now()
-        )
-        expense.save()
+        # Save the expense to the session-specific collection
+        collection.insert_one({
+            "description": description,
+            "amount": amount,
+            "paid_by": {"username": paid_by_username},
+            "participants": [{"username": u} for u in participants_usernames],
+            "date": datetime.now().isoformat()
+        })
 
         return redirect("dashboard")
 
     return render(request, "add-expense.html")
 
+
 def summary(request):
-    expenses = Expense.objects()  # fetch all expenses from MongoDB
+    collection = get_session_collection(request)
+    expenses = list(collection.find())
 
     total_owed = 0
     total_owing = 0
-    balances = defaultdict(float)  # key: user, value: balance
+    balances = defaultdict(float)
 
-    # calculate balances
+    # Calculate balances
     for expense in expenses:
-        if len(expense.participants) == 0:
-            continue  # avoid division by zero
+        participants = expense.get("participants", [])
+        if not participants:
+            continue
 
-        amount_per_person = expense.amount / len(expense.participants)
+        amount_per_person = expense["amount"] / len(participants)
+        payer = expense.get("paid_by", {}).get("username", "Unknown")
+        balances[payer] += expense["amount"] - amount_per_person * len(participants)
 
-        # the payer gets credit for what they covered
-        balances[expense.paid_by.username] += expense.amount - amount_per_person * len(expense.participants)
+        for p in participants:
+            participant_name = p.get("username", "Unknown")
+            if participant_name != payer:
+                balances[participant_name] -= amount_per_person
 
-        # each participant owes their share
-        for participant in expense.participants:
-            if participant.username != expense.paid_by.username:
-                balances[participant.username] -= amount_per_person
-
-    # separate totals
+    # Separate totals
     for bal in balances.values():
         if bal > 0:
             total_owed += bal
         else:
             total_owing += abs(bal)
 
-    # settlement suggestions
+    # Settlement suggestions
     settlements = []
     debtors = {u: b for u, b in balances.items() if b < 0}
     creditors = {u: b for u, b in balances.items() if b > 0}
 
-    # loop until debts are settled
     for debtor, debt_amount in list(debtors.items()):
         debt_amount = abs(debt_amount)
         for creditor, credit_amount in list(creditors.items()):
@@ -168,11 +152,10 @@ def summary(request):
                 "amount": round(pay_amount, 2)
             })
 
-            # update balances
             creditors[creditor] -= pay_amount
             debt_amount -= pay_amount
 
-        debtors[debtor] = -debt_amount  # update remaining debt
+        debtors[debtor] = -debt_amount
 
     context = {
         "total_owed": round(total_owed, 2),
