@@ -16,29 +16,33 @@ client = MongoClient(MONGO_URI)
 db = client[DB_NAME]
 
 def dashboard(request):
-    # Get a unique session ID for the user
+    # -----------------------
+    # Get or create a unique session ID
+    # -----------------------
     session_id = request.session.session_key
     if not session_id:
-        request.session.create()
+        request.session.save()  # generates session_key
         session_id = request.session.session_key
 
-    # Use a temporary collection name per session
+    # -----------------------
+    # Use a temporary collection per session
+    # -----------------------
     collection_name = f"expenses_{session_id}"
 
-    # Drop the collection if it exists to start fresh
-    if collection_name in db.list_collection_names():
-        db[collection_name].drop()
+    # Only initialize the collection once per session
+    if collection_name not in db.list_collection_names():
+        # Insert default/demo data
+        db[collection_name].insert_one({
+            "description": "Sample Expense",
+            "amount": 100,
+            "paid_by": {"username": "Admin"},
+            "participants": [{"username": "User1"}, {"username": "User2"}],
+            "date": "2025-11-08T00:00:00"
+        })
 
-    # Optionally, add default/demo data
-    db[collection_name].insert_one({
-        "description": "Sample Expense",
-        "amount": 100,
-        "paid_by": {"username": "Admin"},
-        "participants": [{"username": "User1"}, {"username": "User2"}],
-        "date": "2025-11-08T00:00:00"
-    })
-
+    # -----------------------
     # Fetch expenses for this session
+    # -----------------------
     expenses_data = list(db[collection_name].find())
 
     # Calculate totals
@@ -77,7 +81,6 @@ def dashboard(request):
     }
 
     return render(request, "dashboard.html", context)
-
 
 def add_expense(request):
     if request.method == "POST":
